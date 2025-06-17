@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Zeoforge Admin Panel</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      background-image: url('https://images.unsplash.com/photo-1498050108023-c5249f4df085');
+      background-size: cover;
+      background-attachment: fixed;
+      background-repeat: no-repeat;
+    }
+  </style>
+</head>
+<body class="min-h-screen bg-black bg-opacity-70 text-white p-6">
+
+  <h1 class="text-5xl text-center font-extrabold bg-gradient-to-r from-yellow-400 via-orange-500 to-red-500 bg-clip-text text-transparent animate-bounce mb-8">
+    Zeoforge
+  </h1>
+
+  <!-- ➕ Tugma -->
+  <div class="flex justify-center mb-8">
+    <button onclick="askPassword()" class="bg-white text-black text-4xl p-4 rounded-full shadow-xl hover:scale-105 transition">➕</button>
+  </div>
+
+  <!-- Admin Panel Modal -->
+  <div id="adminPanel" class="fixed inset-0 bg-black bg-opacity-80 hidden z-40 overflow-y-auto p-6">
+    <div class="bg-white text-black max-w-2xl mx-auto rounded-xl p-6">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-2xl font-bold">🛠 Admin Panel</h2>
+        <button onclick="document.getElementById('adminPanel').classList.add('hidden')" class="text-red-500 font-bold text-lg">❌</button>
+      </div>
+
+      <div class="mb-6">
+        <h3 class="font-semibold mb-2">📤 Yangi loyiha qo‘shish</h3>
+        <input type="file" id="imgFile" accept="image/*" class="mb-2 w-full" />
+        <input type="text" id="imgUrl" placeholder="Yoki rasm URL..." class="border px-3 py-2 rounded w-full mb-2" />
+        <input type="text" id="linkUrl" placeholder="Loyiha havolasi" class="border px-3 py-2 rounded w-full mb-2" />
+        <textarea id="descText" placeholder="Izoh..." class="border px-3 py-2 rounded w-full mb-2"></textarea>
+        <button onclick="addProject()" class="bg-green-600 text-white px-4 py-2 rounded w-full">✅ Qo‘shish</button>
+      </div>
+
+      <hr class="mb-4">
+
+      <h3 class="text-lg font-semibold mb-2">📚 Mavjud loyihalar</h3>
+      <div id="adminProjects" class="space-y-4"></div>
+    </div>
+  </div>
+
+  <!-- Foydalanuvchi ko‘radi -->
+  <div id="projectList" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 max-w-6xl mx-auto"></div>
+
+  <footer class="mt-12 bg-gray-900 text-white py-8 text-center text-sm rounded-xl max-w-6xl mx-auto">
+    <p class="mb-2 font-semibold">© 2025 Zeoforge Technologies</p>
+    <p class="max-w-xl mx-auto px-4">
+      Biz zamonaviy, ishonchli va interaktiv veb-platformalarni ishlab chiqamiz. Har bir loyiha — bu yangilik, estetik va funksionallik uyg‘unligi.
+    </p>
+    <p class="mt-4 text-gray-400">Bog‘lanish: <a href="mailto:info@zeoforge.uz" class="underline">info@zeoforge.uz</a></p>
+  </footer>
+
+  <script>
+    const ADMIN_HASH = btoa("zeoparol2025");
+
+    let projects = JSON.parse(localStorage.getItem('zeoProjects')) || [];
+
+    function askPassword() {
+      const entered = prompt("Parolni kiriting:");
+      if (btoa(entered) === ADMIN_HASH) {
+        document.getElementById('adminPanel').classList.remove('hidden');
+        renderAdminPanel();
+      } else {
+        alert("❌ Noto‘g‘ri parol");
+      }
+    }
+
+    function generateId() {
+      return Math.floor(100000 + Math.random() * 900000);
+    }
+
+    function addProject() {
+      const file = document.getElementById('imgFile').files[0];
+      const url = document.getElementById('imgUrl').value.trim();
+      const link = document.getElementById('linkUrl').value.trim();
+      const desc = document.getElementById('descText').value.trim();
+
+      if (!link || !desc || (!file && !url)) return alert("Barcha maydonlarni to‘ldiring");
+
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function (e) {
+          saveProject(e.target.result, link, desc);
+        };
+        reader.readAsDataURL(file);
+      } else {
+        saveProject(url, link, desc);
+      }
+
+      // Tozalash
+      document.getElementById('imgFile').value = '';
+      document.getElementById('imgUrl').value = '';
+      document.getElementById('linkUrl').value = '';
+      document.getElementById('descText').value = '';
+    }
+
+    function saveProject(img, link, desc) {
+      const newProject = {
+        id: generateId(),
+        img,
+        link,
+        desc,
+        views: 0
+      };
+      projects.push(newProject);
+      localStorage.setItem('zeoProjects', JSON.stringify(projects));
+      renderProjects();
+      renderAdminPanel();
+    }
+
+    function deleteProject(id) {
+      projects = projects.filter(p => p.id !== id);
+      localStorage.setItem('zeoProjects', JSON.stringify(projects));
+      renderProjects();
+      renderAdminPanel();
+    }
+
+    function renderProjects() {
+      const container = document.getElementById('projectList');
+      container.innerHTML = '';
+      projects.forEach((p, i) => {
+        const card = document.createElement('div');
+        card.className = 'bg-white text-black rounded-xl shadow-lg overflow-hidden w-full max-w-xs mx-auto transition transform hover:scale-105';
+        card.innerHTML = `
+          <img src="${p.img}" class="w-full h-40 object-cover">
+          <div class="p-4">
+            <p class="text-md font-medium mb-2">${p.desc}</p>
+            <p class="text-sm text-gray-600">👁 ${p.views} marta ko‘rilgan</p>
+            <p class="text-xs text-gray-500 mb-2">🆔 ID: ${p.id}</p>
+            <a href="${p.link}" target="_blank" onclick="projects[${i}].views++; localStorage.setItem('zeoProjects', JSON.stringify(projects))" class="bg-blue-600 text-white px-4 py-2 rounded block text-center">🔗 Loyiha havolasi</a>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function renderAdminPanel() {
+      const container = document.getElementById('adminProjects');
+      container.innerHTML = '';
+      projects.forEach((p) => {
+        const item = document.createElement('div');
+        item.className = "bg-gray-100 p-4 rounded flex justify-between items-center";
+        item.innerHTML = `
+          <div>
+            <p><strong>${p.desc}</strong></p>
+            <p class="text-sm text-gray-600">ID: ${p.id}</p>
+          </div>
+          <button onclick="deleteProject(${p.id})" class="bg-red-500 text-white px-3 py-1 rounded">🗑 O‘chirish</button>
+        `;
+        container.appendChild(item);
+      });
+    }
+
+    renderProjects();
+  </script>
+</body>
+</html>
